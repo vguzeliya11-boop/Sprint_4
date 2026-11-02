@@ -15,8 +15,8 @@ public class MainPage {
     private By topOrderButton = By.xpath("(//button[text()='Заказать'])[1]");
     private By bottomOrderButton = By.xpath("(//button[text()='Заказать'])[2]");
 
-    // Локатор для кнопки принятия куки (может быть "Ок", "Хорошо" и т.д.)
-    private By cookieAcceptButton = By.xpath("//button[contains(text(), 'Ок') or contains(text(), 'Хорошо')]");
+    // Локатор для кнопки принятия куки в баннере
+    private By cookieAcceptButton = By.cssSelector("div[class*='CookieConsent'] button[class*='CookieButton']");
 
     private By faqHeader = By.xpath("//*[contains(text(), 'Вопросы о важном')]");
 
@@ -102,6 +102,21 @@ public class MainPage {
             return false;
         } catch (Exception e) {
             return false;
+        }
+    }
+
+    // Метод для получения текста ответа по индексу вопроса
+    public String getAnswerText(int index) {
+        try {
+            if (index < answerKeywords.length) {
+                // Ищем элемент, содержащий текст ответа
+                By answerLocator = By.xpath("//*[contains(text(), '" + answerKeywords[index] + "')]");
+                WebElement answer = wait.until(ExpectedConditions.visibilityOfElementLocated(answerLocator));
+                return answer.getText();
+            }
+            return "";
+        } catch (Exception e) {
+            return "";
         }
     }
 }

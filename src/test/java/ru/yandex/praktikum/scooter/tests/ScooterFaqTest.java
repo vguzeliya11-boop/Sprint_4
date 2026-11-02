@@ -3,6 +3,7 @@ package ru.yandex.praktikum.scooter.tests;
 import io.github.bonigarcia.wdm.WebDriverManager;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -14,14 +15,37 @@ import ru.yandex.praktikum.scooter.pages.MainPage;
 import java.util.Arrays;
 import java.util.Collection;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(Parameterized.class)
 public class ScooterFaqTest {
 
+    // Константы
+    private static final String BASE_URL = "https://qa-scooter.praktikum-services.ru/";
+    private static final String WINDOW_SIZE = "1920,1080";
+
     private WebDriver driver;
     private MainPage mainPage;
     private final int questionIndex;
+
+    // Массив ожидаемых ответов (ключевые фразы)
+    private static final String[] expectedAnswers = {
+            "Сутки — 400 рублей",
+            "один заказ — один самокат",
+            "Отсчёт времени аренды начинается",
+            "Только начиная с завтрашнего дня",
+            "позвонить в поддержку по красивому номеру 1010",
+            "Самокат приезжает к вам с полной зарядкой",
+            "Да, пока самокат не привезли",
+            "Да, обязательно"
+    };
+
+    // Инициализация WebDriverManager один раз для всех тестов
+    @BeforeClass
+    public static void setUpClass() {
+        WebDriverManager.chromedriver().setup();
+    }
 
     public ScooterFaqTest(int questionIndex) {
         this.questionIndex = questionIndex;
@@ -36,14 +60,10 @@ public class ScooterFaqTest {
 
     @Before
     public void setUp() {
-        WebDriverManager.chromedriver().setup();
         ChromeOptions options = new ChromeOptions();
-        options.addArguments("--no-sandbox", "--disable-dev-shm-usage");
-        // ВАЖНО: задаем размер окна, чтобы верстка не ломалась и элементы были кликабельны
-        options.addArguments("--window-size=1920,1080");
-
+        options.addArguments("--no-sandbox", "--disable-dev-shm-usage", "--window-size=" + WINDOW_SIZE);
         driver = new ChromeDriver(options);
-        driver.get("https://qa-scooter.praktikum-services.ru/");
+        driver.get(BASE_URL);
         mainPage = new MainPage(driver);
     }
 
@@ -52,9 +72,16 @@ public class ScooterFaqTest {
         // Кликаем по вопросу с нужным индексом
         mainPage.clickFaqQuestionByIndex(questionIndex);
 
-        // Проверяем, что ответ открылся
-        assertTrue("Ответ на вопрос с индексом " + questionIndex + " не открылся",
-                mainPage.isFaqAnswerVisible(questionIndex));
+        // Получаем текст ответа
+        String answerText = mainPage.getAnswerText(questionIndex);
+
+        // Проверяем, что ответ не пустой
+        assertFalse("Ответ на вопрос с индексом " + questionIndex + " пустой", answerText.isEmpty());
+
+        // Проверяем, что ответ содержит ожидаемый текст
+        assertTrue("Ответ не соответствует вопросу. Ожидалось: " + expectedAnswers[questionIndex] +
+                        ", получено: " + answerText,
+                answerText.contains(expectedAnswers[questionIndex]));
     }
 
     @After

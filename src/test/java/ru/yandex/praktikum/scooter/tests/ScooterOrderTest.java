@@ -24,18 +24,21 @@ public class ScooterOrderTest {
     private MainPage mainPage;
     private OrderPage orderPage;
 
-    // Параметры для теста
-    private final int orderButtonIndex; // 1 - верхняя, 2 - нижняя
+    // Параметры для теста (добавили phone и commentStep2)
+    private final int orderButtonIndex;
     private final String name;
     private final String surname;
     private final String address;
     private final String metro;
     private final String date;
     private final String color;
-    private final String comment;
+    private final String commentStep1;
+    private final String phone;
+    private final String commentStep2;
 
     public ScooterOrderTest(int orderButtonIndex, String name, String surname, String address,
-                            String metro, String date, String color, String comment) {
+                            String metro, String date, String color, String commentStep1,
+                            String phone, String commentStep2) {
         this.orderButtonIndex = orderButtonIndex;
         this.name = name;
         this.surname = surname;
@@ -43,16 +46,18 @@ public class ScooterOrderTest {
         this.metro = metro;
         this.date = date;
         this.color = color;
-        this.comment = comment;
+        this.commentStep1 = commentStep1;
+        this.phone = phone;
+        this.commentStep2 = commentStep2;
     }
 
     @Parameterized.Parameters
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][]{
-                // Тест 1: Верхняя кнопка, одни данные
-                {1, "Иван", "Иванов", "ул. Пушкина, д. 10", "Чистые пруды", "01.11.2023", "black", "Позвонить за час"},
-                // Тест 2: Нижняя кнопка, другие данные
-                {2, "Петр", "Петров", "ул. Лермонтова, д. 5", "Арбатская", "05.11.2023", "white", "Оставить у консьержа"}
+                // Тест 1: Верхняя кнопка
+                {1, "Иван", "Иванов", "ул. Пушкина, д. 10", "Чистые пруды", "01.11.2026", "black", "Позвонить за час", "+79991112233", "Все отлично"},
+                // Тест 2: Нижняя кнопка
+                {2, "Петр", "Петров", "ул. Лермонтова, д. 5", "Арбатская", "05.11.2026", "white", "Оставить у консьержа", "+79994445566", "Не звонить"}
         });
     }
 
@@ -60,9 +65,8 @@ public class ScooterOrderTest {
     public void setUp() {
         WebDriverManager.chromedriver().setup();
         ChromeOptions options = new ChromeOptions();
-        // Если тесты падают из-за бага Chrome, можно попробовать убрать headless для отладки,
-        // но для сдачи лучше оставить.
-        options.addArguments("--no-sandbox", "--headless", "--disable-dev-shm-usage");
+        // Убрали --headless, чтобы браузер открывался визуально (по предыдущему замечанию)
+        options.addArguments("--no-sandbox", "--disable-dev-shm-usage", "--window-size=1920,1080");
         driver = new ChromeDriver(options);
         driver.get("https://qa-scooter.praktikum-services.ru/");
 
@@ -72,26 +76,35 @@ public class ScooterOrderTest {
 
     @Test
     public void testScooterOrderFlow() {
-        // 1. Нажимаем нужную кнопку "Заказать"
+        // 1. Нажимаем нужную кнопку "Заказать" на главной
         if (orderButtonIndex == 1) {
             mainPage.clickTopOrderButton();
         } else {
             mainPage.clickBottomOrderButton();
         }
 
-        // 2. Заполняем форму заказа
-        orderPage.fillName(name);
-        orderPage.fillSurname(surname);
+        // 2. Заполняем ПЕРВУЮ форму заказа
+        orderPage.fillNameStep1(name);
+        orderPage.fillSurnameStep1(surname);
         orderPage.fillAddress(address);
         orderPage.selectMetro(metro);
         orderPage.fillDate(date);
         orderPage.selectColor(color);
-        orderPage.fillComment(comment);
+        orderPage.fillCommentStep1(commentStep1);
 
-        // 3. Нажимаем "Далее"
+        // 3. Нажимаем "Далее" для перехода ко второй форме
         orderPage.clickNextButton();
 
-        // 4. Проверяем появление всплывающего окна об успешном заказе
+        // 4. Заполняем ВТОРУЮ форму заказа
+        orderPage.fillNameStep2(name);
+        orderPage.fillSurnameStep2(surname);
+        orderPage.fillPhone(phone);
+        orderPage.fillCommentStep2(commentStep2);
+
+        // 5. Нажимаем финальную кнопку "Заказать"
+        orderPage.clickOrderButton();
+
+        // 6. Проверяем появление всплывающего окна об успешном заказе
         assertTrue("Сообщение об успешном заказе не появилось", orderPage.isSuccessMessageVisible());
     }
 

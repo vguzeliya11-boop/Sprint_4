@@ -15,31 +15,19 @@ import ru.yandex.praktikum.scooter.pages.MainPage;
 import java.util.Arrays;
 import java.util.Collection;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(Parameterized.class)
 public class ScooterFaqTest {
 
-    // Константы
     private static final String BASE_URL = "https://qa-scooter.praktikum-services.ru/";
     private static final String WINDOW_SIZE = "1920,1080";
 
     private WebDriver driver;
     private MainPage mainPage;
-    private final int questionIndex;
-
-    // Массив ожидаемых ответов (ключевые фразы)
-    private static final String[] expectedAnswers = {
-            "Сутки — 400 рублей",
-            "один заказ — один самокат",
-            "Отсчёт времени аренды начинается",
-            "Только начиная с завтрашнего дня",
-            "позвонить в поддержку по красивому номеру 1010",
-            "Самокат приезжает к вам с полной зарядкой",
-            "Да, пока самокат не привезли",
-            "Да, обязательно"
-    };
+    private final String questionText;
+    private final String expectedAnswer;
 
     // Инициализация WebDriverManager один раз для всех тестов
     @BeforeClass
@@ -47,14 +35,31 @@ public class ScooterFaqTest {
         WebDriverManager.chromedriver().setup();
     }
 
-    public ScooterFaqTest(int questionIndex) {
-        this.questionIndex = questionIndex;
+    // Конструктор теперь принимает текст вопроса и ожидаемый ответ
+    public ScooterFaqTest(String questionText, String expectedAnswer) {
+        this.questionText = questionText;
+        this.expectedAnswer = expectedAnswer;
     }
 
     @Parameterized.Parameters
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][]{
-                {0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}
+                {"Сколько это стоит? И как оплатить?",
+                        "Сутки — 400 рублей. Оплата курьеру — наличными или картой."},
+                {"Хочу сразу несколько самокатов! Так можно?",
+                        "Пока что у нас так: один заказ — один самокат. Если хотите покататься с друзьями, можете просто сделать несколько заказов — один за другим."},
+                {"Как рассчитывается время аренды?",
+                        "Допустим, вы оформляете заказ на 8 мая. Мы привозим самокат 8 мая в течение дня. Отсчёт времени аренды начинается с момента, когда вы оплатите заказ курьеру. Если мы привезли самокат 8 мая в 20:30, суточная аренда закончится 9 мая в 20:30."},
+                {"Можно ли заказать самокат прямо на сегодня?",
+                        "Только начиная с завтрашнего дня. Но скоро станем расторопнее."},
+                {"Можно ли продлить заказ или вернуть самокат раньше?",
+                        "Пока что нет! Но если что-то срочное — всегда можно позвонить в поддержку по красивому номеру 1010."},
+                {"Вы привозите зарядку вместе с самокатом?",
+                        "Самокат приезжает к вам с полной зарядкой. Этого хватает на восемь суток — даже если будете кататься без передышек и во сне. Зарядка не понадобится."},
+                {"Можно ли отменить заказ?",
+                        "Да, пока самокат не привезли. Штрафа не будет, объяснительной записки тоже не попросим. Все же свои."},
+                {"Я жизу за МКАДом, привезёте?",
+                        "Да, обязательно. Всем самокатов! И Москве, и Московской области."}
         });
     }
 
@@ -69,19 +74,19 @@ public class ScooterFaqTest {
 
     @Test
     public void testFaqAccordion() {
-        // Кликаем по вопросу с нужным индексом
-        mainPage.clickFaqQuestionByIndex(questionIndex);
+        // Кликаем по вопросу, используя текст из параметра
+        mainPage.clickFaqQuestionByText(questionText);
 
         // Получаем текст ответа
-        String answerText = mainPage.getAnswerText(questionIndex);
+        String answerText = mainPage.getAnswerText(expectedAnswer);
 
         // Проверяем, что ответ не пустой
-        assertFalse("Ответ на вопрос с индексом " + questionIndex + " пустой", answerText.isEmpty());
+        assertFalse("Ответ на вопрос '" + questionText + "' пустой", answerText.isEmpty());
 
-        // Проверяем, что ответ содержит ожидаемый текст
-        assertTrue("Ответ не соответствует вопросу. Ожидалось: " + expectedAnswers[questionIndex] +
-                        ", получено: " + answerText,
-                answerText.contains(expectedAnswers[questionIndex]));
+        // Проверяем полное соответствие ответа ожидаемому тексту
+        assertEquals("Ответ не соответствует вопросу '" + questionText + "'",
+                expectedAnswer,
+                answerText.trim());
     }
 
     @After

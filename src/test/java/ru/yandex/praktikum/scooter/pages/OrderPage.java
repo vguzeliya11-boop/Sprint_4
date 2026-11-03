@@ -11,23 +11,26 @@ public class OrderPage {
     private WebDriver driver;
     private WebDriverWait wait;
 
-    // --- ЛОКАТОРЫ ПЕРВОЙ ФОРМЫ ---
-    private By nameInputStep1 = By.xpath("//input[@placeholder='* Имя']");
-    private By surnameInputStep1 = By.xpath("//input[@placeholder='* Фамилия']");
-    private By addressInput = By.xpath("//input[@placeholder='* Адрес: куда привезти заказ']");
-    private By metroInput = By.xpath("//input[@placeholder='* Станция метро']");
-    private By dateInput = By.xpath("//input[@placeholder='* Когда привезти самокат']");
-    private By colorBlack = By.id("black");
-    private By colorWhite = By.id("white");
-    private By commentInputStep1 = By.xpath("//input[@placeholder='Комментарий для курьера']");
-    private By nextButton = By.xpath("//button[text()='Далее']");
+    // --- ЛОКАТОРЫ ПЕРВОЙ ФОРМЫ (исправлены на более устойчивые) ---
+    private By nameInputStep1 = By.xpath("//input[contains(@placeholder, 'Имя')]");
+    private By surnameInputStep1 = By.xpath("//input[contains(@placeholder, 'Фамилия')]");
+    private By addressInput = By.xpath("//input[contains(@placeholder, 'Адрес')]");
+    private By metroInput = By.xpath("//input[contains(@placeholder, 'метро')]");
+    private By dateInput = By.xpath("//input[contains(@placeholder, 'Когда') or contains(@placeholder, 'Дата')]");
+
+    // Ищем радио-кнопки цвета по атрибуту value или имени класса
+    private By colorBlack = By.xpath("//input[@value='black'] | //div[contains(@class, 'black')]");
+    private By colorWhite = By.xpath("//input[@value='white'] | //div[contains(@class, 'white')]");
+
+    private By commentInputStep1 = By.xpath("//input[contains(@placeholder, 'Комментарий')]");
+    private By nextButton = By.xpath("//button[contains(text(), 'Далее')]");
 
     // --- ЛОКАТОРЫ ВТОРОЙ ФОРМЫ ---
-    private By nameInputStep2 = By.xpath("//input[@placeholder='* Имя']");
-    private By surnameInputStep2 = By.xpath("//input[@placeholder='* Фамилия']");
-    private By phoneInput = By.xpath("//input[@placeholder='* Телефон']");
-    private By commentInputStep2 = By.xpath("//input[@placeholder='Комментарий']");
-    private By orderButton = By.xpath("//button[text()='Заказать']");
+    private By nameInputStep2 = By.xpath("//input[contains(@placeholder, 'Имя')]");
+    private By surnameInputStep2 = By.xpath("//input[contains(@placeholder, 'Фамилия')]");
+    private By phoneInput = By.xpath("//input[contains(@placeholder, 'Телефон')]");
+    private By commentInputStep2 = By.xpath("//input[contains(@placeholder, 'Комментарий')]");
+    private By orderButton = By.xpath("//button[contains(text(), 'Заказать')]");
 
     // --- ЛОКАТОРЫ УСПЕХА ---
     private By successMessage = By.xpath("//div[contains(text(), 'Заказ оформлен')]");
@@ -54,7 +57,8 @@ public class OrderPage {
         WebElement metroField = wait.until(ExpectedConditions.elementToBeClickable(metroInput));
         ((JavascriptExecutor) driver).executeScript("arguments[0].click();", metroField);
 
-        By metroOption = By.xpath("//div[@class='Dropdown__option' and text()='" + metroName + "']");
+        // Используем contains для текста, чтобы избежать проблем с лишними пробелами
+        By metroOption = By.xpath("//div[contains(@class, 'Dropdown__option') and contains(text(), '" + metroName + "')]");
         WebElement option = wait.until(ExpectedConditions.elementToBeClickable(metroOption));
         ((JavascriptExecutor) driver).executeScript("arguments[0].click();", option);
     }
@@ -64,7 +68,7 @@ public class OrderPage {
     }
 
     public void selectColor(String colorId) {
-        WebElement colorElement = driver.findElement(By.id(colorId));
+        WebElement colorElement = driver.findElement(By.xpath("//input[@value='" + colorId + "']"));
         ((JavascriptExecutor) driver).executeScript("arguments[0].click();", colorElement);
     }
 

@@ -8,40 +8,47 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 public class MainPage {
-    private WebDriver driver;
-    private WebDriverWait wait;
+    private final WebDriver driver;
+    private final WebDriverWait wait;
 
-    private By topOrderButton = By.xpath("(//button[text()='Заказать'])[1]");
-    private By bottomOrderButton = By.xpath("(//button[text()='Заказать'])[2]");
-    private By cookieAcceptButton = By.cssSelector("div[class*='CookieConsent'] button[class*='CookieButton']");
-    private By faqHeader = By.xpath("//*[contains(text(), 'Вопросы о важном')]");
+    // Локаторы для кнопок заказа
+    private final By topOrderButton = By.xpath("(//button[contains(text(), 'Заказать')])[1]");
+    private final By bottomOrderButton = By.xpath("(//button[contains(text(), 'Заказать')])[last()]");
+    private final By cookieAcceptButton = By.cssSelector("div[class*='CookieConsent'] button[class*='CookieButton']");
+
+    // Локаторы для FAQ
+    private final By faqHeader = By.xpath("//*[contains(text(), 'Вопросы о важном')]");
+    private final By faqQuestions = By.xpath("//*[contains(@class, 'accordion')]//*[contains(@class, 'accordion__heading')]");
 
     public MainPage(WebDriver driver) {
         this.driver = driver;
         this.wait = new WebDriverWait(driver, 10);
     }
 
-    public void acceptCookies() {
+    // ========== МЕТОДЫ ДЛЯ ЗАКАЗА ==========
+
+    public void clickOnCookieAcceptButton() {
         try {
-            WebDriverWait shortWait = new WebDriverWait(driver, 2);
-            WebElement cookieBtn = shortWait.until(ExpectedConditions.elementToBeClickable(cookieAcceptButton));
-            cookieBtn.click();
+            wait.until(ExpectedConditions.elementToBeClickable(cookieAcceptButton)).click();
         } catch (Exception e) {
-            // Игнорируем, если баннера нет
+            // Игнорируем, если куки уже приняты или баннера нет
         }
     }
 
     public void clickTopOrderButton() {
-        acceptCookies();
-        WebElement button = wait.until(ExpectedConditions.elementToBeClickable(topOrderButton));
-        ((JavascriptExecutor) driver).executeScript("arguments[0].click();", button);
+        clickOnCookieAcceptButton();
+        wait.until(ExpectedConditions.elementToBeClickable(topOrderButton)).click();
     }
 
     public void clickBottomOrderButton() {
-        acceptCookies();
-        WebElement button = wait.until(ExpectedConditions.elementToBeClickable(bottomOrderButton));
-        ((JavascriptExecutor) driver).executeScript("arguments[0].click();", button);
+        clickOnCookieAcceptButton();
+        // Скроллим вниз, чтобы кнопка точно появилась в DOM
+        ((JavascriptExecutor) driver).executeScript("window.scrollTo(0, document.body.scrollHeight);");
+        try { Thread.sleep(500); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+        wait.until(ExpectedConditions.elementToBeClickable(bottomOrderButton)).click();
     }
+
+    // ========== МЕТОДЫ ДЛЯ FAQ ==========
 
     public void scrollToFAQ() {
         try {
@@ -52,22 +59,12 @@ public class MainPage {
         }
     }
 
-    // Изменили метод - теперь принимаем текст вопроса как параметр
     public void clickFaqQuestionByText(String questionText) {
         scrollToFAQ();
         By questionLocator = By.xpath("//*[contains(text(), '" + questionText + "')]");
         WebElement question = wait.until(ExpectedConditions.elementToBeClickable(questionLocator));
         ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", question);
         question.click();
-    }
-
-    public boolean isFaqAnswerVisible(String answerKeyword) {
-        try {
-            By answerLocator = By.xpath("//*[contains(text(), '" + answerKeyword + "')]");
-            return wait.until(ExpectedConditions.visibilityOfElementLocated(answerLocator)).isDisplayed();
-        } catch (Exception e) {
-            return false;
-        }
     }
 
     public String getAnswerText(String answerKeyword) {

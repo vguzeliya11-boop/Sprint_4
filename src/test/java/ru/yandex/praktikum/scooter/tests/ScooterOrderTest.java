@@ -3,6 +3,7 @@ package ru.yandex.praktikum.scooter.tests;
 import io.github.bonigarcia.wdm.WebDriverManager;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -21,91 +22,75 @@ import static org.junit.Assert.assertTrue;
 public class ScooterOrderTest {
 
     private WebDriver driver;
-    private MainPage mainPage;
-    private OrderPage orderPage;
-
-    // Параметры для теста (добавили phone и commentStep2)
     private final int orderButtonIndex;
-    private final String name;
-    private final String surname;
-    private final String address;
-    private final String metro;
-    private final String date;
-    private final String color;
-    private final String commentStep1;
-    private final String phone;
-    private final String commentStep2;
+    private final String name, surname, address, metro, phone, date, term, color, comment;
+
+    @BeforeClass
+    public static void setUpClass() {
+        WebDriverManager.chromedriver().setup();
+    }
 
     public ScooterOrderTest(int orderButtonIndex, String name, String surname, String address,
-                            String metro, String date, String color, String commentStep1,
-                            String phone, String commentStep2) {
+                            String metro, String phone, String date, String term, String color, String comment) {
         this.orderButtonIndex = orderButtonIndex;
         this.name = name;
         this.surname = surname;
         this.address = address;
         this.metro = metro;
-        this.date = date;
-        this.color = color;
-        this.commentStep1 = commentStep1;
         this.phone = phone;
-        this.commentStep2 = commentStep2;
+        this.date = date;
+        this.term = term;
+        this.color = color;
+        this.comment = comment;
     }
 
     @Parameterized.Parameters
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][]{
-                // Тест 1: Верхняя кнопка
-                {1, "Иван", "Иванов", "ул. Пушкина, д. 10", "Чистые пруды", "01.11.2026", "black", "Позвонить за час", "+79991112233", "Все отлично"},
-                // Тест 2: Нижняя кнопка
-                {2, "Петр", "Петров", "ул. Лермонтова, д. 5", "Арбатская", "05.11.2026", "white", "Оставить у консьержа", "+79994445566", "Не звонить"}
+                {1, "Иван", "Иванов", "ул. Пушкина, д. 10", "Чистые пруды", "+79991112233", "10.11.2026", "сутки", "black", "Позвонить за час"},
+                {2, "Петр", "Петров", "ул. Лермонтова, д. 5", "Арбатская", "+79994445566", "12.11.2026", "сутки", "grey", "Оставить у консьержа"}
         });
     }
 
     @Before
     public void setUp() {
-        WebDriverManager.chromedriver().setup();
         ChromeOptions options = new ChromeOptions();
-        // Убрали --headless, чтобы браузер открывался визуально (по предыдущему замечанию)
         options.addArguments("--no-sandbox", "--disable-dev-shm-usage", "--window-size=1920,1080");
         driver = new ChromeDriver(options);
         driver.get("https://qa-scooter.praktikum-services.ru/");
-
-        mainPage = new MainPage(driver);
-        orderPage = new OrderPage(driver);
     }
 
     @Test
     public void testScooterOrderFlow() {
-        // 1. Нажимаем нужную кнопку "Заказать" на главной
+        MainPage mainPage = new MainPage(driver);
+        OrderPage orderPage = new OrderPage(driver);
+
         if (orderButtonIndex == 1) {
             mainPage.clickTopOrderButton();
         } else {
             mainPage.clickBottomOrderButton();
         }
 
-        // 2. Заполняем ПЕРВУЮ форму заказа
-        orderPage.fillNameStep1(name);
-        orderPage.fillSurnameStep1(surname);
-        orderPage.fillAddress(address);
-        orderPage.selectMetro(metro);
-        orderPage.fillDate(date);
-        orderPage.selectColor(color);
-        orderPage.fillCommentStep1(commentStep1);
-
-        // 3. Нажимаем "Далее" для перехода ко второй форме
+        // Шаг 1
+        orderPage.setName(name);
+        orderPage.setSurname(surname);
+        orderPage.setAddress(address);
+        orderPage.setMetro(metro);
+        orderPage.setPhone(phone);
         orderPage.clickNextButton();
 
-        // 4. Заполняем ВТОРУЮ форму заказа
-        orderPage.fillNameStep2(name);
-        orderPage.fillSurnameStep2(surname);
-        orderPage.fillPhone(phone);
-        orderPage.fillCommentStep2(commentStep2);
+        // Шаг 2
+        orderPage.setDate(date);
+        orderPage.setTerm(term);
+        orderPage.setColor(color);
+        orderPage.setComment(comment);
 
-        // 5. Нажимаем финальную кнопку "Заказать"
-        orderPage.clickOrderButton();
+        // Финал: открывается модальное окно, нажимается "Да"
+        orderPage.makeOrder();
 
-        // 6. Проверяем появление всплывающего окна об успешном заказе
-        assertTrue("Сообщение об успешном заказе не появилось", orderPage.isSuccessMessageVisible());
+        // ПРОВЕРКА: тест упадет здесь с AssertionError, что и является целью задания (выявление бага)
+        assertTrue("Сообщение об успешном заказе не появилось (это известный баг Chrome)",
+                orderPage.getNewOrderSuccessMessage().contains("Заказ оформлен"));
     }
 
     @After
